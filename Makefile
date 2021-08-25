@@ -1,4 +1,4 @@
-CLANG_VERSION = 10
+CLANG_VERSION = 11
 
 all: compiler-rt_build
 

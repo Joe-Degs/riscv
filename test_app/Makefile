@@ -1,4 +1,4 @@
-CLANG_VERSION = 10
+CLANG_VERSION = 11
 
 MUSL_INSTALL_PATH = ../musl_build/install
 COMPILER_RT_PATH  = ../compiler-rt_build/install/lib/riscv64/libclang_rt.builtins-riscv64.a
