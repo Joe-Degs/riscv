@@ -1,13 +1,16 @@
 # Intro
-__Warning, this project is done by an absolute beginner to assembly and riscv in general.
+*Warning, this project is done by an absolute beginner to assembly and riscv in general.
 The things in this directory will be learning projects. Use at your own discretion
 I saw [gamozolab](https://github.com/gamozolabs) use this one of his streams and that is
-how i got started learning about riscv__
+how i got started learning about riscv*
+
+This projects simplifies building binaries for `rv64i` from single source C projects or
+risc-v assembly projects.
 
 # Usage
 Everything here assumes you have everything from the parent directory working and want
-to do more with riscv. You must have the following things in your `environment` for
-the things in this directory to work.
+to do more with riscv. You must have the following things in your `environment` for things
+to work.
 ```
 RISCV_PATH="/home/joe/dev/riscv"
 export CLANG_VERSION=11
@@ -55,6 +58,7 @@ joe@debian:~/dev/riscv/projects/test_c ||
 ```
 Maaadddd!
 
-# Note
-This whole thing is built on top of this [repository](https://github.com/gamozolabs/riscv)
-If you want to learn more about this kinda of stuff watch him hack live on [youtube](https://www.youtube.com/user/gamozolabs)
+# Resources
+- This whole thing is built on top of this [repository](https://github.com/gamozolabs/riscv) by gamozolabs
+- If you want to learn more about this kinda of stuff watch him hack live on [youtube](https://www.youtube.com/user/gamozolabs)
+- This [pdf](https://shakti.org.in/docs/risc-v-asm-manual.pdf) I found on the internet is a good introduction to systems programming with risc-v
