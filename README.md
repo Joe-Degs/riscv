@@ -12,8 +12,8 @@ and want to keep things as simple as possible.
 
 # Installation
 For absolute beginners who are struggling to install riscv or qemu-riscv64 on debian. You can do the following.
-- Installing clang and llvm tools [stackoverflow](https://stackoverflow.com/a/66227796/16595775)
-- Install ld.lld-<version number> because for some weird reason it does not get installed with the other llvm tools.
+- Installing clang and llvm tools on [StackOverflow](https://stackoverflow.com/a/66227796/16595775)
+- Install ld.lld-`version number` because for some weird reason it does not get installed with the other llvm tools.
 
         $ sudo apt-get install lld-<version number>
 
