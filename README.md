@@ -14,9 +14,13 @@ and want to keep things as simple as possible.
 For absolute beginners who are struggling to install riscv or qemu-riscv64 on debian. You can do the following.
 - Installing clang and llvm tools [stackoverflow](https://stackoverflow.com/a/66227796/16595775)
 - Install ld.lld-<version number> because for some weird reason it does not get installed with the other llvm tools.
+
         $ sudo apt-get install lld-<version number>
+
 - Installing qemu on debian
+
         $ sudo apt-get install qemu-system-misc qemu-user-static binfmt-support
+
 - You can do a manual qemu installation by building from source
 
 # Usage
