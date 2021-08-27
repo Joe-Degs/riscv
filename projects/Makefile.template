@@ -1,9 +1,7 @@
 CFLAGS = -g -target riscv64 -march=rv64i -I$(MUSL_INSTALL_PATH)/include
-# warnings=-Wall -Werror -O2 
-# nostd=-nostdlib
 
 all: template
-	
+
 template: template.o
 	ld.lld-$(CLANG_VERSION) -o template \
 		$(MUSL_INSTALL_PATH)/lib/crt1.o \

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 # generate Makefiles to compile single source c and assembly files
 # for rv64i architecture
@@ -79,6 +79,11 @@ def main():
     elif dest_dir.is_file():
         err_messages.append('-d: destination for Makefile should be a directory')
     
+    # print error messages and the usage of this tool.
+    if err_messages:
+        usage(sys.argv[0], err_messages)
+        sys.exit(2)
+
     # filepath of the destination Makefile.
     dest_makefile = pathlib.Path(dest_dir / 'Makefile').resolve()
 
@@ -92,17 +97,13 @@ def main():
     # directory
     if not (source_file.exists() and source_file.is_file() and source_file.parts[-1] in \
         [s.parts[-1] for s in dest_dir.glob('*')]):
-        err_messages.append(\
-                f'there is no source file {source_file.parts[-1]} in destination')
+            usage(sys.argv[0], f'there is no source file {source_file.parts[-1]} in destination')
+            exit(2)
 
     if not target_binary:
         # target binary will be source file name without the extension
         target_binary = source_file.parts[-1][:source_file.parts[-1].index('.')]
 
-    # print error messages and the usage of this tool.
-    if err_messages:
-        usage(sys.argv[0], err_messages)
-        sys.exit(2)
  
     # print('makefile destination:', str(dest_makefile))
     # print('compiler flags:', compiler_flags)

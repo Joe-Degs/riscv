@@ -58,6 +58,19 @@ joe@debian:~/dev/riscv/projects/test_c ||
 ```
 Maaadddd!
 
+You can even specify additional compiler flags using the `--flags` option. Its a beautiful thing!
+```
+joe@debian:~/dev/riscv/projects/test_asm || ../build.py -d . -s hello_world.s --flags=-Wall,-Werror,-nostdlib,-g,-O2 --build
+clang-11 -g -target riscv64 -march=rv64i -I/home/joe/dev/riscv/musl_build/install/include -Wall -Werror -nostdlib -g -O2 -c hello_world.s
+ld.lld-11 -o hello_world \
+        /home/joe/dev/riscv/musl_build/install/lib/crt1.o \
+        /home/joe/dev/riscv/musl_build/install/lib/libc.a \
+        /home/joe/dev/riscv/compiler-rt_build/install/lib/riscv64/libclang_rt.builtins-riscv64.a \
+        *.o
+joe@debian:~/dev/riscv/projects/test_asm || qemu-riscv64 hello_world
+Hello Mothersuckers!
+```
+
 # Resources
 - This whole thing is built on top of this [repository](https://github.com/gamozolabs/riscv) by gamozolabs
 - If you want to learn more about this kinda of stuff watch him hack live on [youtube](https://www.youtube.com/user/gamozolabs)
