@@ -54,11 +54,11 @@ ld.lld-11 -o test_c \
         *.o
 joe@debian:~/dev/riscv/projects/test_c || qemu-riscv64 test_c
 Hello Mothersuckers!
-joe@debian:~/dev/riscv/projects/test_c ||
 ```
 Maaadddd!
 
-You can even specify additional compiler flags using the `--flags` option. Its a beautiful thing!
+You can even specify additional compiler flags using the `--flags` option, passing the flags as
+a comma separated string. Isn't it beautiful?
 ```
 joe@debian:~/dev/riscv/projects/test_asm || ../build.py -d . -s hello_world.s --flags=-Wall,-Werror,-nostdlib,-g,-O2 --build
 clang-11 -g -target riscv64 -march=rv64i -I/home/joe/dev/riscv/musl_build/install/include -Wall -Werror -nostdlib -g -O2 -c hello_world.s
