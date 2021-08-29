@@ -36,7 +36,7 @@ def main():
         usage(sys.argv[0], err)
         exit(2)
     
-    # option variables.
+    # default Makefile to use as template
     template_file = \
         pathlib.Path(pathlib.Path.home() / 'dev/riscv/projects/Makefile.template') \
             .resolve()
@@ -54,7 +54,7 @@ def main():
             usage(sys.argv[0])
             exit(2)
         if opt == '--flags':
-            compiler_flags = arg.replace(',', ' ')
+            compiler_flags = arg.split(',')
         elif opt == '-d':
             dest_dir = pathlib.Path(arg).resolve()
         elif opt == '-s':
@@ -130,10 +130,7 @@ def main():
     parsed_flags = parse_cflags(cflags, compiler_flags)
     parsed_body = parse_makefile_body(body, target_binary, source_file.parts[-1])
 
-    # print('parsed cflags: ', parsed_flags)
-    # print('parsed makefile body: ', parsed_body)
-
-    # write the generated Makefile to into target Makefile
+    # write the generated Makefile to into Makefile in source directory
     with dest_makefile.open('w') as mk:
         mk.write(parsed_flags)
         mk.write(parsed_body)
@@ -142,19 +139,21 @@ def main():
         subprocess.check_call(['make'], shell=True, cwd=str(dest_dir))
     return
 
-def parse_cflags(cflags=[], opt_flags=None):
+# add optional compiler flags to flags to be used
+# in the generated Makefile
+def parse_cflags(cflags, opt_flags=None):
     if opt_flags:
-        flags = opt_flags.split(' ')
-        for f in flags:
-            if not (f in cflags):
-                cflags.append(f)
+        for flag in opt_flags:
+            if not (flag in cflags):
+                cflags.append(flag)
     return f"CFLAGS = {' '.join(cflags).strip()}\n"
 
+# parse the rest of the Makefile body that does compilation
+# and linking.
 def parse_makefile_body(body, target_binary, source_filename):
     objfile = source_filename[:source_filename.index('.')] + '.o'
     for idx, line in enumerate(body):
         if len(line) < 6:
-            body[idx] = line
             continue
         if 'template.c' in line:
             line = line.replace('template.c', source_filename)
