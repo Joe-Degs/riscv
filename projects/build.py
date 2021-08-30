@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-# generate Makefiles to compile single source c and assembly files
-# for rv64i architecture
+# generate Makefiles to compile single source C and assembly files
+# for rv64i architecture using the `musl`, `clang`, `compiler_rt` toolchain
 
 import getopt, sys, pathlib, subprocess
 
@@ -17,19 +17,20 @@ def usage(script_name, err=None):
 
     {script_name} <options>
 
-    Optional ones.
-    --flags=<args>   specify compiler flags as comma separated string
-    -t <arg>         specify the template Makefile to use
-    -b <arg>         specify name of the target binary, if none supplied, -d <arg> is used
-    -s               specify the source file to compile if none is specified, -d <arg> is used 
-    -x <arg>         specify the type of source file. the supported ones are c or asm, default is c
-    --build         build the target binary in the destination directory.
-    Not optional
-    -d <arg>        specify path to the source file \
+    Optional arguments
+    --flags=<args>   specify additional compiler flags as a comma separated string
+    -t <arg>         specify the path to the Makefile to be used as template
+    -b <arg>         specify name of the target binary, if none supplied. default is value of argument -d
+    -s <arg>         specify the source file to compile if none is specified, default is value of argument -d
+    -x <arg>         specify the type of source file. the supported ones are C or assembly source files
+    --build          run make to build the target binary in the destination directory
+
+    Non optional arguments
+    -d <arg>        specify path to the directory of the build \
     ''')
 
 def main():
-    # parse command line arguments.
+    # parse command line arguments
     try:
         opts, _ = getopt.getopt(sys.argv[1:], 'hd:t:b:s:x:', ['flags=', 'help', 'build'])
     except getopt.GetoptError as err:
@@ -65,7 +66,7 @@ def main():
             template_file = pathlib.Path(arg).resolve()
         elif opt == '-b':
             target_binary = arg
-        elif opt in '--build':
+        elif opt == '--build':
             build_target = True
         else:
             usage(sys.argv[0], f'invalid option: {opt} {arg}')
@@ -93,8 +94,7 @@ def main():
         source_file = dest_dir / f'{dest_dir.parts[-1]}.{ext}'
 
     # source file should be relative to the destination directory. this is done
-    # by checking if source_file is a exists, is a file and is part of the destination
-    # directory
+    # by checking if source_file  exists, is a file and is relative to the build directory
     if not (source_file.exists() and source_file.is_file() and source_file.parts[-1] in \
         [s.parts[-1] for s in dest_dir.glob('*')]):
             usage(sys.argv[0], f'there is no source file {source_file.parts[-1]} in destination')
@@ -103,14 +103,6 @@ def main():
     if not target_binary:
         # target binary will be source file name without the extension
         target_binary = source_file.parts[-1][:source_file.parts[-1].index('.')]
-
- 
-    # print('makefile destination:', str(dest_makefile))
-    # print('compiler flags:', compiler_flags)
-    # print('source file:', source_file)
-    # print('directory of source file:', str(dest_dir)) # destination for Makefile
-    # print('template Makefile directory:', str(template_file)) # 
-    # print('target binary name:', target_binary)
 
     cflags = []
     body   = []
@@ -148,8 +140,7 @@ def parse_cflags(cflags, opt_flags=None):
                 cflags.append(flag)
     return f"CFLAGS = {' '.join(cflags).strip()}\n"
 
-# parse the rest of the Makefile body that does compilation
-# and linking.
+# parse the rest of the Makefile that does compilation and linking.
 def parse_makefile_body(body, target_binary, source_filename):
     objfile = source_filename[:source_filename.index('.')] + '.o'
     for idx, line in enumerate(body):
