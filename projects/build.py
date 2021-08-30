@@ -20,8 +20,8 @@ def usage(script_name, err=None):
     Optional arguments
     --flags=<args>   specify additional compiler flags as a comma separated string
     -t <arg>         specify the path to the Makefile to be used as template
-    -b <arg>         specify name of the target binary, if none supplied. default is value of argument -d
-    -s <arg>         specify the source file to compile if none is specified, default is value of argument -d
+    -b <arg>         specify name of the target binary. default is value of argument -d
+    -s <arg>         specify the source file to compile. default is value of argument -d
     -x <arg>         specify the type of source file. the supported ones are C or assembly source files
     --build          run make to build the target binary in the destination directory
 
