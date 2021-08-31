@@ -74,4 +74,8 @@ Hello Mothersuckers!
 # Resources
 - This whole thing is built on top of this [repository](https://github.com/gamozolabs/riscv) by gamozolabs
 - If you want to learn more about this kinda of stuff watch him hack live on [youtube](https://www.youtube.com/user/gamozolabs)
-- This [pdf](https://shakti.org.in/docs/risc-v-asm-manual.pdf) I found on the internet is a good introduction to systems programming with risc-v
+- This [pdf](https://shakti.org.in/docs/risc-v-asm-manual.pdf) Is a good introduction to risc-v assembly programming
+- [CS 3140](https://www.cs.cornell.edu/courses/cs3410/2019sp/schedule) Cornell University (RISC-V and Computer systems organization)
+- IAR Assembler User Guide [RISC-V](https://wwwfiles.iar.com/riscv/EWRISCV_AssemblerReference.pdf)
+- [ITSC 381](https://passlab.github.io/ITSC3181/schedule.html) Computer Architecture Course
+- [MIT 6.004](https://www.youtube.com/playlist?list=PLXEILn0XAtNbdvpk2jg5Xw9LhoRvilgt4) Computational Structures(cpu design and RISC-V isa)
