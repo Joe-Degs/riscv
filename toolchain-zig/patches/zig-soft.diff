@@ -1,0 +1,179 @@
+--- a/compiler_rt.zig
++++ b/compiler_rt.zig
+@@ -374,6 +374,16 @@
+     else => false,
+ };
+ 
++/// Operations with no hardware instruction on this target, which compiler_rt must
++/// implement without emitting the operation it implements.
++pub const want_soft = struct {
++    const riscv = builtin.cpu.arch.isRISCV();
++    pub const mul = riscv and !builtin.cpu.hasAny(.riscv, &.{ .m, .zmmul });
++    pub const div = riscv and !builtin.cpu.has(.riscv, .m);
++    /// Assumes a single hart with no preemption: locks become no-ops.
++    pub const atomics = riscv and !builtin.cpu.has(.riscv, .a);
++};
++
+ /// These functions are required on Windows on ARM. They are provided by MSVC libc, but in libc-less
+ /// builds or when linking MinGW libc they are our responsibility.
+ /// Temporarily used for thumb-uefi until https://github.com/ziglang/zig/issues/21630 is addressed.
+--- a/compiler_rt/atomics.zig
++++ b/compiler_rt/atomics.zig
+@@ -32,6 +32,10 @@
+     // every atomic memory access to go through the lock.
+     .sparc => if (builtin.cpu.has(.sparc, .hasleoncasa)) @sizeOf(usize) else 0,
+ 
++    // Without atomic instructions every access goes through the (no-op) lock
++    // path, see compiler_rt.want_soft.atomics.
++    .riscv32, .riscv32be, .riscv64, .riscv64be => if (compiler_rt.want_soft.atomics) 0 else @sizeOf(usize),
++
+     // XXX: On x86/x86_64 we could check the presence of cmpxchg8b/cmpxchg16b
+     // and set this parameter accordingly.
+     else => @sizeOf(usize),
+@@ -66,6 +70,7 @@
+         v: if (arch.isSPARC()) sparc_lock else other_lock align(cache_line_size) = .Unlocked,
+ 
+         fn acquire(self: *@This()) void {
++            if (comptime compiler_rt.want_soft.atomics) return;
+             while (true) {
+                 const flag = if (comptime arch.isSPARC()) flag: {
+                     break :flag asm volatile ("ldstub [%[addr]], %[flag]"
+@@ -83,6 +88,7 @@
+             }
+         }
+         fn release(self: *@This()) void {
++            if (comptime compiler_rt.want_soft.atomics) return;
+             if (comptime arch.isSPARC()) {
+                 _ = asm volatile ("clrb [%[addr]]"
+                     :
+--- a/compiler_rt/int.zig
++++ b/compiler_rt/int.zig
+@@ -15,8 +15,21 @@
+ 
+ comptime {
+     symbol(&__divmodti4, "__divmodti4");
+-    symbol(&__udivmoddi4, "__udivmoddi4");
+-    symbol(&__divmoddi4, "__divmoddi4");
++    if (compiler_rt.want_soft.div) {
++        symbol(&__udivmoddi4_soft, "__udivmoddi4");
++        symbol(&__divmoddi4_soft, "__divmoddi4");
++        symbol(&__divdi3_soft, "__divdi3");
++        symbol(&__udivdi3_soft, "__udivdi3");
++        symbol(&__moddi3_soft, "__moddi3");
++        symbol(&__umoddi3_soft, "__umoddi3");
++    } else {
++        symbol(&__udivmoddi4, "__udivmoddi4");
++        symbol(&__divmoddi4, "__divmoddi4");
++        symbol(&__divdi3, "__divdi3");
++        symbol(&__udivdi3, "__udivdi3");
++        symbol(&__moddi3, "__moddi3");
++        symbol(&__umoddi3, "__umoddi3");
++    }
+     if (compiler_rt.want_aeabi) {
+         symbol(&__aeabi_idiv, "__aeabi_idiv");
+         symbol(&__aeabi_uidiv, "__aeabi_uidiv");
+@@ -24,12 +37,8 @@
+         symbol(&__divsi3, "__divsi3");
+         symbol(&__udivsi3, "__udivsi3");
+     }
+-    symbol(&__divdi3, "__divdi3");
+-    symbol(&__udivdi3, "__udivdi3");
+     symbol(&__modsi3, "__modsi3");
+-    symbol(&__moddi3, "__moddi3");
+     symbol(&__umodsi3, "__umodsi3");
+-    symbol(&__umoddi3, "__umoddi3");
+     symbol(&__divmodsi4, "__divmodsi4");
+     symbol(&__udivmodsi4, "__udivmodsi4");
+ }
+@@ -194,6 +203,59 @@
+     return r;
+ }
+ 
++fn udivmod_soft(a: u64, b: u64, maybe_rem: ?*u64) u64 {
++    var q: u64 = 0;
++    var r: u64 = 0;
++    var i: u7 = 64;
++    while (i > 0) {
++        i -= 1;
++        const carry = r >> 63;
++        r = (r << 1) | ((a >> @intCast(i)) & 1);
++        if (carry != 0 or r >= b) {
++            r -%= b;
++            q |= @as(u64, 1) << @intCast(i);
++        }
++    }
++    if (maybe_rem) |rem| rem.* = r;
++    return q;
++}
++
++fn __udivmoddi4_soft(a: u64, b: u64, maybe_rem: ?*u64) callconv(.c) u64 {
++    return udivmod_soft(a, b, maybe_rem);
++}
++
++fn __udivdi3_soft(a: u64, b: u64) callconv(.c) u64 {
++    return udivmod_soft(a, b, null);
++}
++
++fn __umoddi3_soft(a: u64, b: u64) callconv(.c) u64 {
++    var r: u64 = undefined;
++    _ = udivmod_soft(a, b, &r);
++    return r;
++}
++
++fn __divdi3_soft(a: i64, b: i64) callconv(.c) i64 {
++    const sign: u64 = @bitCast((a ^ b) >> 63);
++    const abs_a = (a ^ (a >> 63)) -% (a >> 63);
++    const abs_b = (b ^ (b >> 63)) -% (b >> 63);
++    const res = udivmod_soft(@bitCast(abs_a), @bitCast(abs_b), null);
++    return @bitCast((res ^ sign) -% sign);
++}
++
++fn __moddi3_soft(a: i64, b: i64) callconv(.c) i64 {
++    const abs_a = (a ^ (a >> 63)) -% (a >> 63);
++    const abs_b = (b ^ (b >> 63)) -% (b >> 63);
++    var r: u64 = undefined;
++    _ = udivmod_soft(@bitCast(abs_a), @bitCast(abs_b), &r);
++    return (@as(i64, @bitCast(r)) ^ (a >> 63)) -% (a >> 63);
++}
++
++fn __divmoddi4_soft(a: i64, b: i64, rem: *i64) callconv(.c) i64 {
++    const d = __divdi3_soft(a, b);
++    rem.* = __moddi3_soft(a, b);
++    return d;
++}
++
+ test "test_umoddi3" {
+     try test_one_umoddi3(0, 1, 0);
+     try test_one_umoddi3(2, 1, 0);
+--- a/compiler_rt/mulXi3.zig
++++ b/compiler_rt/mulXi3.zig
+@@ -9,6 +9,8 @@
+     symbol(&__mulsi3, "__mulsi3");
+     if (compiler_rt.want_aeabi) {
+         symbol(&__aeabi_lmul, "__aeabi_lmul");
++    } else if (compiler_rt.want_soft.mul) {
++        symbol(&__muldi3_soft, "__muldi3");
+     } else {
+         symbol(&__muldi3, "__muldi3");
+     }
+@@ -26,6 +28,20 @@
+ 
+     while (ua > 0) {
+         if ((ua & 1) != 0) r +%= ub;
++        ua >>= 1;
++        ub <<= 1;
++    }
++
++    return @bitCast(r);
++}
++
++fn __muldi3_soft(a: i64, b: i64) callconv(.c) i64 {
++    var ua: u64 = @bitCast(a);
++    var ub: u64 = @bitCast(b);
++    var r: u64 = 0;
++
++    while (ua > 0) {
++        if ((ua & 1) != 0) r +%= ub;
+         ua >>= 1;
+         ub <<= 1;
+     }
