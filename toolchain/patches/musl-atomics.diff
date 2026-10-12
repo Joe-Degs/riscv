@@ -1,0 +1,37 @@
+--- arch/riscv64/atomic_arch.h.orig	2026-10-12 01:11:04.550357516 +0000
++++ arch/riscv64/atomic_arch.h	2026-10-12 01:28:05.820224571 +0000
+@@ -4,6 +4,8 @@
+ 	__asm__ __volatile__ ("fence rw,rw" : : : "memory");
+ }
+ 
++#ifdef __riscv_atomic
++
+ #define a_cas a_cas
+ static inline int a_cas(volatile int *p, int t, int s)
+ {
+@@ -36,3 +38,25 @@
+ 		: "memory");
+ 	return old;
+ }
++
++#else
++
++#define a_cas a_cas
++static inline int a_cas(volatile int *p, int t, int s)
++{
++    int old = *p;
++    if (old == t)
++        *p = s;
++    return old;
++}
++
++#define a_cas_p a_cas_p
++static inline void *a_cas_p(volatile void *p, void *t, void *s)
++{
++    void *old = *(void *volatile *)p;
++    if (old == t)
++        *(void *volatile *)p = s;
++    return old;
++}
++
++#endif
